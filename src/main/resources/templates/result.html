@@ -2,13 +2,15 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Generated Image</title>
+    <link rel="stylesheet" type="text/css" href="/styles.css">
 </head>
 <body>
-    <h1>Generated Image</h1>
+<div class="container">
+    <h3>Generated Image</h3>
     <div th:if="${imageUrl}">
         <img th:src="${imageUrl}" alt="Generated Image">
     </div>
     <a href="/">Generate another image</a>
-
+</div>
 </body>
 </html>

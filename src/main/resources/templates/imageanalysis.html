@@ -2,12 +2,15 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Image Analysis</title>
+    <link rel="stylesheet" type="text/css" href="/styles.css">
 </head>
 <body>
-    <h1>Image Analysis Result</h1>
+<div class="container">
+    <h3>Image Analysis Result</h3>
     <div th:if="${imageAnalysis}">
         <p th:text="${imageAnalysis}"></p>
     </div>
     <a href="/">Upload another image</a>
+</div>
 </body>
 </html>
