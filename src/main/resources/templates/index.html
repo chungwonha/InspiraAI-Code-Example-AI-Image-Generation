@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Image Generator</title>
+</head>
+<body>
+    <h1>Enter a prompt to generate an image</h1>
+    <form action="/generateImage" method="post">
+        <label for="prompt">Prompt:</label>
+        <textarea id="prompt" name="prompt" required style="width: 300px; height: 100px;"></textarea>
+        <button type="submit">Generate Image</button>
+    </form>
+</body>
+</html>

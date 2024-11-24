@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Generated Image</title>
+</head>
+<body>
+    <h1>Generated Image</h1>
+    <div th:if="${imageUrl}">
+        <img th:src="${imageUrl}" alt="Generated Image">
+    </div>
+    <a href="/">Generate another image</a>
+
+</body>
+</html>
