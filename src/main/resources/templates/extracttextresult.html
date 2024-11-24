@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Image Analysis</title>
+</head>
+<body>
+    <h1>Image Analysis Result</h1>
+    <div th:if="${extractedText}">
+        <p th:text="${extractedText}"></p>
+    </div>
+    <a href="/">Upload another image</a>
+</body>
+</html>

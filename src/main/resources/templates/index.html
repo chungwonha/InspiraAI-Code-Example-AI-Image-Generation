@@ -10,5 +10,14 @@
         <textarea id="prompt" name="prompt" required style="width: 300px; height: 100px;"></textarea>
         <button type="submit">Generate Image</button>
     </form>
-</body>
+
+    <h1>Upload an image</h1>
+    <form action="/extractText" method="post" enctype="multipart/form-data">
+        <label for="image">Image:</label>
+        <input type="file" id="image" name="image" accept="image/*" required>
+        <button type="submit">Analyze Image</button>
+    </form>
+    <div th:if="${error}">
+        <p th:text="${error}" style="color: red;"></p>
+    </div></body>
 </html>
