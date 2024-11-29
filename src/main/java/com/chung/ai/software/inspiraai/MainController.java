@@ -54,7 +54,7 @@ public class MainController {
     }
 
     @PostMapping("/analyzeImage")
-    public String extractText(@RequestParam("image") MultipartFile image, Model model) {
+    public String analyzeImage(@RequestParam("image") MultipartFile image, Model model) {
         if (image.isEmpty()) {
             model.addAttribute("error", "Please upload an image.");
             return "index";
