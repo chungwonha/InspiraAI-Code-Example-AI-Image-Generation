@@ -3,6 +3,15 @@
 <head>
     <title>Image Generator</title>
     <link rel="stylesheet" type="text/css" href="/styles.css">
+    <script>
+        function sendFileLocation() {
+            var fileInput = document.getElementById('ollamaImage');
+            var fileLocationInput = document.getElementById('fileLocation');
+            if (fileInput.files.length > 0) {
+                fileLocationInput.value = fileInput.value; // This will capture the full path and file name
+            }
+        }
+    </script>
 </head>
 <body>
 <div class="container">
@@ -15,13 +24,22 @@
         <button type="submit">Generate Image</button>
     </form>
 <hr>
-    <h3>Upload an image</h3>
+    <h3>Select an image for Open AI analysis</h3>
     <form action="/analyzeImage" method="post" enctype="multipart/form-data">
         <div class="form-group">
         <label for="image">Image:</label>
         <input type="file" id="image" name="image" accept="image/*" required>
         </div>
         <button type="submit">Analyze Image</button>
+    </form>
+    <hr>
+    <h3>Select an image for Ollama analysis</h3>
+    <form action="/ollama/analyzeImage2" method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="ollamaImage">Select Image:</label>
+            <input type="file" id="ollamaImage" name="ollamaImage" accept="image/*" required>
+        </div>
+        <button type="submit">Analyze Image with Ollama</button>
     </form>
     <div th:if="${error}">
         <p th:text="${error}" style="color: red;"></p>
