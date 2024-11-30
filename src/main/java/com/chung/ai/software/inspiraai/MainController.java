@@ -69,13 +69,13 @@ public class MainController {
             // Create the OpenAI model
             ChatLanguageModel chatModel = OpenAiChatModel.builder()
                     .apiKey(openaiApiKey)
-                    .modelName("gpt-4-turbo-2024-04-09")
-                    .maxTokens(50)
+                    .modelName("gpt-4o") //gpt-4-turbo-2024-04-09")
+                    .maxTokens(500)
                     .build();
 
             // Create the user message with the image
             UserMessage userMessage = UserMessage.from(
-                    TextContent.from("what do you see?"),
+                    TextContent.from("What do you see? give me a description in detail"),
                     ImageContent.from(dataUrl)
             );
 

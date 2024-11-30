@@ -54,7 +54,7 @@ public class OllamaController {
 
             // Create the user message with the image
             UserMessage userMessage = UserMessage.from(
-                    TextContent.from("What do you see?"),
+                    TextContent.from("What do you see? give me a description in detail"),
                     ImageContent.from(base64Image, mimeType)
             );
 
