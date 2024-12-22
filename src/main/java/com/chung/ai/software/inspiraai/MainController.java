@@ -1,15 +1,18 @@
 package com.chung.ai.software.inspiraai;
 
+import com.chung.ai.software.inspiraai.springai.VoiceService;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.output.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiImageModel;
@@ -22,7 +25,7 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
-
+import org.springframework.core.io.Resource;
 import static dev.langchain4j.model.openai.OpenAiImageModelName.DALL_E_3;
 
 
@@ -30,6 +33,8 @@ import static dev.langchain4j.model.openai.OpenAiImageModelName.DALL_E_3;
 @Slf4j
 public class MainController {
 
+    @Autowired
+    private VoiceService voiceService;
 
     @Value("${openai.api.key}")
     private String openaiApiKey;
@@ -94,5 +99,14 @@ public class MainController {
         return "imageanalysis";
     }
 
+//    @PostMapping(path="/audioAsk", produces = "audio/mpeg")
+//    public Resource audioAskAudioResponse(@RequestParam("scripts") String scripts) {
+//
+//      //  String transcription = voiceService.transcribe(blob.getResource());
+////        Question transcribedQuestion = new Question(game, transcription);
+////        Answer answer = boardGameService.askQuestion(
+////                transcribedQuestion, conversationId);
+//        return voiceService.textToSpeech(scripts);
+//    }
 
 }
