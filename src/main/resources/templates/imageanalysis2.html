@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Image Analysis</title>
+    <link rel="stylesheet" type="text/css" href="/styles.css">
+</head>
+<body>
+<div class="container">
+    <h3>Image Analysis Result</h3>
+    <p th:text="${imageAnalysis}"></p>
+    <div th:if="${audioUrl}">
+        <h4>Audio Description</h4>
+        <audio controls autoplay>
+            <source th:src="${audioUrl}" type="audio/mpeg">
+            Your browser does not support the audio element.
+        </audio>
+    </div>
+    <div th:if="${error}">
+        <p th:text="${error}" style="color: red;"></p>
+    </div>
+</div>
+</body>
+</html>

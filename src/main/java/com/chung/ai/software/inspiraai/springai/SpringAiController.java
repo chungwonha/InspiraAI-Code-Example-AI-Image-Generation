@@ -13,11 +13,6 @@ public class SpringAiController {
 
     @PostMapping(path="/audioAsk", produces = "audio/mpeg")
     public Resource audioAskAudioResponse(@RequestParam("scripts") String scripts) {
-
-        //  String transcription = voiceService.transcribe(blob.getResource());
-//        Question transcribedQuestion = new Question(game, transcription);
-//        Answer answer = boardGameService.askQuestion(
-//                transcribedQuestion, conversationId);
         return voiceService.textToSpeech(scripts);
     }
 }

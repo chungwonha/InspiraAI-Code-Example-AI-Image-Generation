@@ -1,5 +1,6 @@
 package com.chung.ai.software.inspiraai;
 
+import com.chung.ai.software.inspiraai.aws.AwsUtil;
 import com.chung.ai.software.inspiraai.springai.VoiceService;
 import dev.langchain4j.data.image.Image;
 import dev.langchain4j.model.chat.ChatLanguageModel;
@@ -12,7 +13,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiImageModel;
@@ -25,19 +25,25 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
-import org.springframework.core.io.Resource;
-import static dev.langchain4j.model.openai.OpenAiImageModelName.DALL_E_3;
 
+import static dev.langchain4j.model.openai.OpenAiImageModelName.DALL_E_3;
 
 @Controller
 @Slf4j
 public class MainController {
+
+
+    @Autowired
+    private AwsUtil awsUtil;
 
     @Autowired
     private VoiceService voiceService;
 
     @Value("${openai.api.key}")
     private String openaiApiKey;
+
+    @Value("${aws.s3.bucket-name}")
+    private String bucketName;
 
     @GetMapping("/")
     public String index() {
@@ -87,16 +93,17 @@ public class MainController {
             // Generate the response
             Response<AiMessage> response = chatModel.generate(userMessage);
             String extractedText = response.content().text();
-
+            String audio_file_url = awsUtil.uploadToS3(voiceService.textToSpeech(extractedText));
+            log.info("audio_file_url: {}", audio_file_url);
             // Add the extracted text to the model
             model.addAttribute("imageAnalysis", extractedText);
-
+            model.addAttribute("audioUrl", audio_file_url);
         } catch (IOException e) {
             log.error("Error processing the uploaded image", e);
             model.addAttribute("error", "An error occurred while processing the image.");
         }
 
-        return "imageanalysis";
+        return "imageanalysis2";
     }
 
 //    @PostMapping(path="/audioAsk", produces = "audio/mpeg")
