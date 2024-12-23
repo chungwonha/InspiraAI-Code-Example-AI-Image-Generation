@@ -7,6 +7,9 @@
 <body>
 <div class="container">
     <h3>Image Analysis Result</h3>
+    <div th:if="${imageUrl}">
+        <img th:src="${imageUrl}" alt="Uploaded Image" style="max-width: 100%; height: auto;">
+    </div>
     <p th:text="${imageAnalysis}"></p>
     <div th:if="${audioUrl}">
         <h4>Audio Description</h4>
@@ -18,6 +21,7 @@
     <div th:if="${error}">
         <p th:text="${error}" style="color: red;"></p>
     </div>
+    <a href="/">Upload another image</a>
 </div>
 </body>
 </html>

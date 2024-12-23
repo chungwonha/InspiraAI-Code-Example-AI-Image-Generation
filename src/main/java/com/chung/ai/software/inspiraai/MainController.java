@@ -72,6 +72,12 @@ public class MainController {
         }
 
         try {
+            // Upload the image to S3 and get the URL
+            String imageUrl = awsUtil.uploadImageToS3("1",image);
+            if (imageUrl == null) {
+                model.addAttribute("error", "Failed to upload image to S3.");
+                return "index";
+            }
             // Convert the uploaded file to a base64-encoded data URL
             byte[] imageBytes = image.getBytes();
             String base64Image = Base64.getEncoder().encodeToString(imageBytes);
@@ -93,11 +99,12 @@ public class MainController {
             // Generate the response
             Response<AiMessage> response = chatModel.generate(userMessage);
             String extractedText = response.content().text();
-            String audio_file_url = awsUtil.uploadToS3(voiceService.textToSpeech(extractedText));
+            String audio_file_url = awsUtil.uploadToS3("1",voiceService.textToSpeech(extractedText));
             log.info("audio_file_url: {}", audio_file_url);
             // Add the extracted text to the model
             model.addAttribute("imageAnalysis", extractedText);
             model.addAttribute("audioUrl", audio_file_url);
+            model.addAttribute("imageUrl", dataUrl);
         } catch (IOException e) {
             log.error("Error processing the uploaded image", e);
             model.addAttribute("error", "An error occurred while processing the image.");

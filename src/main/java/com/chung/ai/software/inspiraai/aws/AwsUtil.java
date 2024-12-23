@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -37,8 +38,8 @@ public class AwsUtil {
 
     private S3Presigner presigner;
 
-public String uploadToS3(Resource audioResource) {
-    String keyName = "audio-files/" + System.currentTimeMillis() + ".mp3"; // Generate unique key
+public String uploadToS3(String userid, Resource audioResource) {
+    String keyName = userid+"/"+"audio-files/" + System.currentTimeMillis() + ".mp3"; // Generate unique key
 
 
 
@@ -63,6 +64,31 @@ public String uploadToS3(Resource audioResource) {
         return null;
     }
 }
+
+    public String uploadImageToS3(String userid,MultipartFile image) {
+        String keyName = userid+"/"+"images/" + System.currentTimeMillis() + "-" + image.getOriginalFilename(); // Generate unique key
+
+        S3Client s3 = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
+                .build();
+
+        try (InputStream inputStream = image.getInputStream()) {
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(keyName)
+                    .contentType(image.getContentType()) // Set content type
+                    .build();
+
+            s3.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, image.getSize()));
+            String imageUrl = generatePresignedUrl(bucketName, keyName);
+            // Generate and return the file URL
+            return imageUrl;
+        } catch (IOException e) {
+            log.error("Error uploading image to S3", e);
+            return null;
+        }
+    }
 
     public String generatePresignedUrl(String bucketName, String keyName) {
         this.presigner = S3Presigner.builder()
