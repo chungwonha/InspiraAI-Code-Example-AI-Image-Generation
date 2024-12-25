@@ -12,6 +12,12 @@ public class OpenAiVoiceService implements VoiceService {
     private final OpenAiAudioTranscriptionModel transcriptionModel;
     private final SpeechModel speechModel;
 
+    @Override
+    public Resource textToSpeech(String text) {
+        byte[] speechBytes = speechModel.call(text);
+        return new ByteArrayResource(speechBytes);
+    }
+
     public OpenAiVoiceService(
             OpenAiAudioTranscriptionModel transcriptionModel,
             SpeechModel speechModel) {
@@ -24,10 +30,6 @@ public class OpenAiVoiceService implements VoiceService {
         return transcriptionModel.call(audioFileResource); // <2>
     }
 
-    @Override
-    public Resource textToSpeech(String text) {
-        byte[] speechBytes = speechModel.call(text);
-        return new ByteArrayResource(speechBytes);
-    }
+
 
 }
