@@ -7,8 +7,11 @@ import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.model.output.Response;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,7 +22,10 @@ import dev.langchain4j.model.openai.OpenAiImageModel;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.List;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
@@ -39,16 +45,28 @@ public class MainController {
     @Autowired
     private VoiceService voiceService;
 
+    @Autowired
+    private YouTubeDownloader youtubeDownloader;
+
+    @Value("${ytDlpHome}")
+    private String ytDlpHome;
+
     @Value("${openai.api.key}")
     private String openaiApiKey;
 
     @Value("${aws.s3.bucket-name}")
     private String bucketName;
 
+    ChatClient chatClient;
+
+    public MainController(ChatClient chatClient) {
+        this.chatClient = chatClient;
+    }
     @GetMapping("/")
     public String index() {
         return "index";
     }
+
 
     @PostMapping("/generateImage")
     public String generateImage(@RequestParam("prompt") String prompt, Model model) {
@@ -99,7 +117,7 @@ public class MainController {
             // Generate the response
             Response<AiMessage> response = chatModel.generate(userMessage);
             String extractedText = response.content().text();
-            String audio_file_url = awsUtil.uploadToS3("1",voiceService.textToSpeech(extractedText));
+            String audio_file_url = awsUtil.uploadGeneralAudioToS3("1",voiceService.textToSpeech(extractedText));
             log.info("audio_file_url: {}", audio_file_url);
             // Add the extracted text to the model
             model.addAttribute("imageAnalysis", extractedText);
@@ -111,6 +129,71 @@ public class MainController {
         }
 
         return "imageanalysis2";
+    }
+
+
+    @PostMapping("/downloadAudio")
+    public String downloadAudioFromYouTube(@RequestParam("targetUrl") String targetUrl, Model model) {
+        String outputPath = "downloads/test.mp3";
+        String fileName = youtubeDownloader.downloadAudio(targetUrl, outputPath, ytDlpHome);
+        log.info("Generated audio file: {}", fileName);
+
+        // Upload the generated audio file to S3
+        Path audioPath = Paths.get(ytDlpHome+"\\"+fileName);
+
+        Resource audioResource = new FileSystemResource(audioPath.toFile());
+        String audioFileUrl = awsUtil.uploadYoutubeAudioToS3("1",fileName,audioResource);
+
+        if (audioFileUrl != null) {
+            model.addAttribute("audioUrl", audioFileUrl);
+            return "redirect:/ytAudioTranscribe";
+        } else {
+            model.addAttribute("error", "Failed to upload audio to S3.");
+            return "index";
+        }
+    }
+
+    @GetMapping("/ytAudioTranscribe")
+    public String ytAudioTranscribe(Model model) {
+        List<AwsUtil.AudioFile> audioFiles = awsUtil.listAudioFiles(bucketName);
+        model.addAttribute("audioFiles", audioFiles);
+        return "yt_audio_transcribe";
+    }
+
+
+    @PostMapping("/transcribeAudio")
+    public String transcribeAudio(@RequestParam("selectedAudio") String selectedAudio,
+                                  @RequestParam("audioFileName") String audioFileName,
+                                  Model model) {
+        String userId = "1";
+        Resource audioResource = awsUtil.getAudioFileFromS3(selectedAudio);
+        String transcription = voiceService.transcribe(audioResource);
+        model.addAttribute("transcription", transcription);
+        String prompt = "Summarize the provided transcription to 3 sentences. Transcription: "+transcription;
+        String summary = chatClient.prompt().user(prompt).call().content();
+
+        String videoid = parseMp3FileName(audioFileName);
+
+        awsUtil.storeTranscriptionInDynamoDB(videoid+"_"+userId,"transcriptions",selectedAudio,transcription,summary);
+        log.info("videoid: {}", videoid);
+        // Add attributes to the model
+        model.addAttribute("userId", userId);
+        model.addAttribute("audioUrl", selectedAudio);
+        model.addAttribute("summary", summary);
+        model.addAttribute("transcription", transcription);
+
+        return "transcription_result";
+    }
+
+    public String parseMp3FileName(String filePath) {
+        if (filePath == null || !filePath.endsWith(".mp3")) {
+            throw new IllegalArgumentException("Invalid MP3 file path");
+        }
+        int lastSlashIndex = filePath.lastIndexOf('/');
+        if (lastSlashIndex == -1) {
+            return filePath; // No directory structure, return the file name itself
+        }
+        return filePath.substring(lastSlashIndex + 1);
     }
 
 //    @PostMapping(path="/audioAsk", produces = "audio/mpeg")

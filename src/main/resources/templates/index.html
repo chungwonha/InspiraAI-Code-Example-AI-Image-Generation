@@ -23,7 +23,16 @@
         </div>
         <button type="submit">Generate Image</button>
     </form>
-<hr>
+    <hr>
+        <h2>Download Audio from YouTube</h2>
+        <form action="/downloadAudio" method="post">
+            <label for="targetUrl">YouTube URL:</label>
+            <input type="text" id="targetUrl" name="targetUrl" required>
+            <button type="submit">Download Audio</button>
+        </form>
+    <hr>
+            <a href="/ytAudioTranscribe">Go to Audio Transcription</a>
+    <hr>
     <h3>Select an image for Open AI analysis</h3>
     <form action="/analyzeImage" method="post" enctype="multipart/form-data">
         <div class="form-group">

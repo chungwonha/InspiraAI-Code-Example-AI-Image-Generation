@@ -29,7 +29,4 @@ public class OpenAiVoiceService implements VoiceService {
     public String transcribe(Resource audioFileResource) {
         return transcriptionModel.call(audioFileResource); // <2>
     }
-
-
-
 }

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Transcription Result</title>
+  <link rel="stylesheet" type="text/css" href="/styles.css">
+</head>
+<body>
+<div class="container">
+  <h3>Transcription Result</h3>
+  <div>
+    <label>User ID:</label>
+    <span th:text="${userId}"></span>
+  </div>
+  <div>
+    <label>Audio File:</label>
+    <audio controls th:src="${audioUrl}"></audio>
+  </div>
+  <div>
+    <label>Summary:</label>
+    <textarea th:text="${summary}" style="width: 100%; height: 100px; resize: both;"></textarea>
+  </div>
+  <div>
+    <label>Transcription:</label>
+    <textarea th:text="${transcription}" style="width: 100%; height: 200px; resize: both;"></textarea>
+  </div>
+  <div>
+    <a href="/">Back to Home</a>
+    |
+    <a href="/ytAudioTranscribe">Back to Audio Files</a>
+  </div>
+</div>
+</body>
+</html>
