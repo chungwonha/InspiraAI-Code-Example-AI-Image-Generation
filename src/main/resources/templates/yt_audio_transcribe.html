@@ -3,17 +3,26 @@
 <head>
     <title>Transcribe Audio</title>
     <link rel="stylesheet" type="text/css" href="/styles.css">
+    <script>
+        function updateHiddenInput(selectedName) {
+            document.getElementById('audioFileName').value = selectedName;
+        }
+    </script>
 </head>
 <body>
 <div class="container">
     <h3>Audio Files</h3>
     <form th:action="@{/transcribeAudio}" method="post">
         <div th:each="audioFile : ${audioFiles}">
-            <input type="radio" th:name="selectedAudio" th:value="${audioFile.url}" th:id="${audioFile.name}">
+            <input type="radio" name="selectedAudio"
+                   th:value="${audioFile.url}"
+                   th:id="${audioFile.name}"
+                   th:data-name="${audioFile.name}"
+                   onchange="updateHiddenInput(this.getAttribute('data-name'))">
             <label th:for="${audioFile.name}" th:text="${audioFile.name}"></label>
             <audio controls th:src="${audioFile.url}"></audio>
-            <input type="hidden" th:name="audioFileName" th:value="${audioFile.name}">
         </div>
+        <input type="hidden" id="audioFileName" name="audioFileName" value="">
         <button type="submit">Transcribe</button>
     </form>
     <div>

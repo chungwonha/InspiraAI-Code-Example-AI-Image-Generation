@@ -26,11 +26,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ImageContent;
 import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 import static dev.langchain4j.model.openai.OpenAiImageModelName.DALL_E_3;
 
@@ -165,22 +167,36 @@ public class MainController {
     public String transcribeAudio(@RequestParam("selectedAudio") String selectedAudio,
                                   @RequestParam("audioFileName") String audioFileName,
                                   Model model) {
+        log.info("Selected audio: {}", selectedAudio);
+        log.info("Audio file name: {}", audioFileName);
         String userId = "1";
-        Resource audioResource = awsUtil.getAudioFileFromS3(selectedAudio);
-        String transcription = voiceService.transcribe(audioResource);
-        model.addAttribute("transcription", transcription);
-        String prompt = "Summarize the provided transcription to 3 sentences. Transcription: "+transcription;
-        String summary = chatClient.prompt().user(prompt).call().content();
 
         String videoid = parseMp3FileName(audioFileName);
+        String transcriptionKey = videoid + "_" + userId;
 
-        awsUtil.storeTranscriptionInDynamoDB(videoid+"_"+userId,"transcriptions",selectedAudio,transcription,summary);
-        log.info("videoid: {}", videoid);
-        // Add attributes to the model
+        // Check if transcription and summary already exist in S3
+        Map<String, AttributeValue> existingTranscription = awsUtil.getTranscriptionFromDB(transcriptionKey);
+
+        if (existingTranscription !=null) {
+            // If transcription and summary exist, use them
+            model.addAttribute("transcription", existingTranscription.get("transcription").s());
+            model.addAttribute("summary", existingTranscription.get("summary").s());
+        }else {
+            Resource audioResource = awsUtil.getAudioFileFromS3(selectedAudio);
+            String transcription = voiceService.transcribe(audioResource);
+            model.addAttribute("transcription", transcription);
+            String prompt = "Summarize the provided transcription to 3 sentences. Transcription: " + transcription;
+            String summary = chatClient.prompt().user(prompt).call().content();
+
+            awsUtil.storeTranscriptionInDynamoDB(videoid + "_" + userId, "transcriptions", selectedAudio, transcription, summary);
+            log.info("videoid: {}", videoid);
+            // Add attributes to the model
+            model.addAttribute("summary", summary);
+            //model.addAttribute("transcription", transcription);
+        }
+
         model.addAttribute("userId", userId);
         model.addAttribute("audioUrl", selectedAudio);
-        model.addAttribute("summary", summary);
-        model.addAttribute("transcription", transcription);
 
         return "transcription_result";
     }

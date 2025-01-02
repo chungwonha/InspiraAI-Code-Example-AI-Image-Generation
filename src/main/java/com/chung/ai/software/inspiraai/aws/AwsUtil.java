@@ -1,32 +1,34 @@
 package com.chung.ai.software.inspiraai.aws;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.PutItemRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Component
@@ -218,6 +220,35 @@ public String uploadYoutubeAudioToS3(String userid, String mp3FileName,Resource 
 
         dynamoDbClient.putItem(request);
     }
+
+    public Map<String, AttributeValue> getTranscriptionFromDB(String transcriptionKey) {
+    try {
+        log.info("Retrieving transcription from DynamoDB: {}", transcriptionKey);
+        // Query DynamoDB to check if the transcription exists
+        Map<String, AttributeValue> keyCondition = new HashMap<>();
+        keyCondition.put(":v_id", AttributeValue.builder().s(transcriptionKey).build());
+
+        QueryRequest queryRequest = QueryRequest.builder()
+                .tableName("transcriptions")
+                .keyConditionExpression("videoid_userid = :v_id")
+                .expressionAttributeValues(keyCondition)
+                .build();
+
+        QueryResponse queryResponse = dynamoDbClient.query(queryRequest);
+
+        if (queryResponse.count() > 0) {
+            // Transcription exists, retrieve it from DynamoDB
+            Map<String, AttributeValue> item = queryResponse.items().get(0);
+            return item;
+        } else {
+            // Transcription does not exist
+            return null;
+        }
+    } catch (Exception e) {
+        log.error("Error retrieving transcription from DynamoDB", e);
+        return null;
+    }
+}
 
 
 }
