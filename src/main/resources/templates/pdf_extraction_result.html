@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Extracted Text</title>
+</head>
+<body>
+<div class="container">
+    <h3>Extracted Text</h3>
+    <form th:action="@{/ollama/summarizeText}" method="post">
+        <textarea name="text" th:text="${extractedText}" style="width: 100%; height: 200px;"></textarea>
+        <button type="submit">Summarize Text</button>
+    </form>
+    <a href="/">Back to Home</a>
+</div>
+</body>
+</html>

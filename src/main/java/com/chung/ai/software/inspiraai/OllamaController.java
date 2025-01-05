@@ -74,6 +74,29 @@ public class OllamaController {
         return "imageanalysis";
     }
 
+    @PostMapping("/summarizeText")
+    public String summarizeText(@RequestParam("text") String text, Model model) {
+        // Connect to Ollama model
+        ChatLanguageModel chatModel = OllamaChatModel.builder()
+                .baseUrl(OLLAMA_HOST)
+                .modelName(MODEL_NAME)
+                .build();
+
+        // Create the user message with the text
+        UserMessage userMessage = UserMessage.from(
+                TextContent.from(text)
+        );
+
+        // Generate the response
+        Response<AiMessage> response = chatModel.generate(userMessage);
+        String extractedText = response.content().text();
+        log.info("Extracted text: {}", extractedText);
+
+        // Add the extracted text to the model
+        model.addAttribute("summarizedText", extractedText);
+
+        return "textsummary";
+    }
 //    @PostMapping("/analyzeImage3")
 //    public String analyzeImage3(@RequestParam("fileLocation") String fileLocation,Model model) throws IOException {
 //        // Connect to Ollama model

@@ -50,6 +50,12 @@
         </div>
         <button type="submit">Analyze Image with Ollama</button>
     </form>
+    <hr>
+    <h3>Upload PDF</h3>
+    <form th:action="@{/uploadPdf}" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" accept="application/pdf">
+        <button type="submit">Upload</button>
+    </form>
     <div th:if="${error}">
         <p th:text="${error}" style="color: red;"></p>
     </div>

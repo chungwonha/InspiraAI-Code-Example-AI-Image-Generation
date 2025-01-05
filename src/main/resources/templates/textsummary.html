@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Text Summary</title>
+</head>
+<body>
+<div class="container">
+    <h3>Text Summary</h3>
+    <div>
+        <label>Original Text:</label>
+        <pre th:text="${text}"></pre>
+    </div>
+    <div>
+        <label>Summarized Text:</label>
+        <pre th:text="${summarizedText}"></pre>
+    </div>
+    <div>
+        <a href="/">Back to Home</a>
+    </div>
+</div>
+</body>
+</html>
