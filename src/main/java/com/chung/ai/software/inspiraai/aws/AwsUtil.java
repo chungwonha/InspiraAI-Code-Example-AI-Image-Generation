@@ -73,26 +73,22 @@ public class AwsUtil {
 
 public String uploadGeneralAudioToS3(String userid, Resource audioResource) {
     String keyName = userid+"/"+"audio-files/" + System.currentTimeMillis() + ".mp3"; // Generate unique key
-    return this.uploadToS3(keyName, audioResource);
+    return this.uploadToS3(keyName, audioResource,"audio/mpeg");
 }
 
-public String uploadToS3(String keyName, Resource audioResource) {
-//    S3Client s3 = S3Client.builder()
-//            .region(Region.of(region))
-//            .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
-//            .build();
+public String uploadToS3(String keyName, Resource resource, String contentType) {
 
-    try (InputStream inputStream = audioResource.getInputStream()) {
+    try (InputStream inputStream = resource.getInputStream()) {
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(bucketName)
                 .key(keyName)
-                .contentType("audio/mpeg") // Set content type
+                .contentType(contentType) // Set content type
                 .build();
 
-        this.s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, audioResource.contentLength()));
-        String audioFileUrl = generatePresignedUrl(bucketName, keyName);
+        this.s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, resource.contentLength()));
+        String fileUrl = generatePresignedUrl(bucketName, keyName);
         // Generate and return the file URL
-        return audioFileUrl;
+        return fileUrl;
     } catch (IOException e) {
         log.error("Error uploading file to S3", e);
         return null;
@@ -100,15 +96,15 @@ public String uploadToS3(String keyName, Resource audioResource) {
 }
 public String uploadYoutubeAudioToS3(String userid, String mp3FileName,Resource audioResource) {
     String keyName = userid+"/"+"audio-files/" + mp3FileName; // Generate unique key
-    return this.uploadToS3(keyName, audioResource);
+    return this.uploadToS3(keyName, audioResource, "audio/mpeg");
+}
+
+public String uploadVideoToS3(String userid, String mp4FileName, Resource video) {
+    String keyName = userid+"/"+"video/" + mp4FileName; // Generate unique key
+    return this.uploadToS3(keyName, video,"video/mp4");
 }
     public String uploadImageToS3(String userid,MultipartFile image) {
         String keyName = userid+"/"+"images/" + System.currentTimeMillis() + "-" + image.getOriginalFilename(); // Generate unique key
-
-//        S3Client s3 = S3Client.builder()
-//                .region(Region.of(region))
-//                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
-//                .build();
 
         try (InputStream inputStream = image.getInputStream()) {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
@@ -147,10 +143,6 @@ public String uploadYoutubeAudioToS3(String userid, String mp3FileName,Resource 
     }
 
     public List<AudioFile> listAudioFiles(String bucketName) {
-//        S3Client s3Client = S3Client.builder()
-//                .region(Region.of(region))
-//                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyId, secretAccessKey)))
-//                .build();
 
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
         ListObjectsV2Response response = this.s3Client.listObjectsV2(request);

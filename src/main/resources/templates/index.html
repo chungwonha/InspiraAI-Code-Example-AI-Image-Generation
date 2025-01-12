@@ -31,6 +31,13 @@
             <button type="submit">Download Audio</button>
         </form>
     <hr>
+    <!-- Form to download the latest video -->
+    <form action="/downloadLatestVideo" method="post">
+        <label for="channelUrl">Enter YouTube Channel Playlist URL:</label>
+        <input type="text" id="channelUrl" name="channelUrl" required>
+        <button type="submit">Download the latest video</button>
+    </form>
+    <hr>
             <a href="/ytAudioTranscribe">Go to Audio Transcription</a>
     <hr>
     <h3>Select an image for Open AI analysis</h3>

@@ -155,6 +155,31 @@ public class MainController {
         }
     }
 
+    @PostMapping("/downloadLatestVideo")
+    public String downloadLatestVideo(@RequestParam("channelUrl") String channelUrl, Model model) {
+        try {
+            String latestVideoFileName = youtubeDownloader.downloadLatestVideo(channelUrl, ytDlpHome);
+            log.info("Downloaded latest video file: {}", latestVideoFileName);
+
+            // Upload the downloaded video file to S3
+            Path videoPath = Paths.get(ytDlpHome, latestVideoFileName);
+            Resource videoResource = new FileSystemResource(videoPath.toFile());
+            String videoFileUrl = awsUtil.uploadVideoToS3("1", latestVideoFileName, videoResource);
+
+            if (videoFileUrl != null) {
+                model.addAttribute("videoUrl", videoFileUrl);
+                return "redirect:/videodownloadsuccess";
+            } else {
+                model.addAttribute("error", "Failed to upload video to S3.");
+                return "index";
+            }
+        } catch (Exception e) {
+            log.error("Error downloading the latest video", e);
+            model.addAttribute("error", "An error occurred while downloading the latest video.");
+            return "index";
+        }
+    }
+
     @GetMapping("/ytAudioTranscribe")
     public String ytAudioTranscribe(Model model) {
         List<AwsUtil.AudioFile> audioFiles = awsUtil.listAudioFiles(bucketName);

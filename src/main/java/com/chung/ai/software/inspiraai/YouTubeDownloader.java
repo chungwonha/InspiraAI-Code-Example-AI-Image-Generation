@@ -56,4 +56,72 @@ public class YouTubeDownloader {
             throw new RuntimeException("Error downloading audio: " + e.getMessage(), e);
         }
     }
+
+    public String downloadLatestVideo(String channelUrl, String ytDlpHome) {
+        try {
+            // Command to execute the batch file with the channel URL as an argument
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                    "cmd.exe", "/c", "run-yt-dlp-latest-video.bat", "\"" + channelUrl + "\""
+            );
+
+            processBuilder.directory(new File(ytDlpHome));
+            // Log the working directory and command
+            log.info("Working directory: " + processBuilder.directory().getAbsolutePath());
+            log.info("Command: " + String.join(" ", processBuilder.command()));
+
+            Process process = processBuilder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+            String latestVideoFileName = null;
+
+            while ((line = reader.readLine()) != null) {
+                log.info("Output: " + line);
+                // Capture the downloaded file name from the output
+                if (line.contains(".mp4")) {
+                    latestVideoFileName = line.trim();
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                log.info("Exit code: " + exitCode);
+                throw new RuntimeException("Failed to download the latest video. Exit code: " + exitCode);
+            }
+            if (latestVideoFileName.contains("already is in target format mp4")) {
+                log.info("latestVideoFileName: {}", latestVideoFileName);
+                latestVideoFileName = extractFileName(latestVideoFileName);
+                log.info("Video is already in target format mp4. Extracting the file name from the error message.");
+//                Pattern pattern = Pattern.compile("\"([^\"]+\\.mp4)\"");
+//                Matcher matcher = pattern.matcher(latestVideoFileName);
+//                if (matcher.find()) {
+//                    log.info("matcher.group(1): {}", matcher.group(1));
+//                    return matcher.group(1);
+//                }
+            }
+            return latestVideoFileName;
+        } catch (IOException | InterruptedException e) {
+            if (e.getMessage().contains("already is in target format mp4")) {
+                log.info("Video is already in target format mp4. Extracting the file name from the error message.");
+                Pattern pattern = Pattern.compile("\"([^\"]+\\.mp4)\"");
+                Matcher matcher = pattern.matcher(e.getMessage());
+                if (matcher.find()) {
+                    return matcher.group(1);
+                } else {
+                    throw new RuntimeException("Error extracting file name from the error message: " + e.getMessage(), e);
+                }
+            } else {
+                throw new RuntimeException("Error downloading the latest video: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    public String extractFileName(String logMessage) {
+        Pattern pattern = Pattern.compile("\\[VideoConvertor\\] Not converting media file \"([^\"]+\\.mp4)\"; already is in target format mp4");
+        Matcher matcher = pattern.matcher(logMessage);
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            throw new IllegalArgumentException("Log message does not contain the expected format.");
+        }
+    }
 }
