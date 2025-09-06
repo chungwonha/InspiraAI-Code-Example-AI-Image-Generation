@@ -1,7 +1,11 @@
 package com.chung.ai.software.inspiraai.aws;
 
+import com.chung.ai.software.inspiraai.AudioFile;
+import com.chung.ai.software.inspiraai.FileLists;
+import com.chung.ai.software.inspiraai.InspiraaiFile;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Component;
@@ -51,15 +55,20 @@ public class AwsUtil {
     S3Client s3Client;
     S3Presigner presigner;
 
+    FileLists fileLists;
+
     public AwsUtil(DynamoDbClient dynamoDbClient,
                    S3Client s3Client,
                    S3Presigner s3Presigner) {
         this.dynamoDbClient = dynamoDbClient;
         this.s3Client = s3Client;
         this.presigner = s3Presigner;
+        this.fileLists = new FileLists();
     }
 
     private static final Map<String, String> AUDIO_EXTENSIONS = new HashMap<>();
+    private static final Map<String, String> VIDEO_EXTENSIONS = new HashMap<>();
+    private static final Map<String, String> IMAGE_EXTENSIONS = new HashMap<>();
 
     static {
         AUDIO_EXTENSIONS.put("mp3", "audio/mpeg");
@@ -71,9 +80,36 @@ public class AwsUtil {
         // Add more audio extensions if needed
     }
 
+    static {
+        VIDEO_EXTENSIONS.put("mp4", "video/mp4");
+        VIDEO_EXTENSIONS.put("webm", "video/webm");
+        VIDEO_EXTENSIONS.put("ogg", "video/ogg");
+        VIDEO_EXTENSIONS.put("mov", "video/quicktime");
+        VIDEO_EXTENSIONS.put("avi", "video/x-msvideo");
+        VIDEO_EXTENSIONS.put("flv", "video/x-flv");
+        VIDEO_EXTENSIONS.put("wmv", "video/x-ms-wmv");
+        // Add more video extensions if needed
+    }
+
+    static {
+        IMAGE_EXTENSIONS.put("jpg", "image/jpeg");
+        IMAGE_EXTENSIONS.put("jpeg", "image/jpeg");
+        IMAGE_EXTENSIONS.put("png", "image/png");
+        IMAGE_EXTENSIONS.put("gif", "image/gif");
+        IMAGE_EXTENSIONS.put("bmp", "image/bmp");
+        IMAGE_EXTENSIONS.put("webp", "image/webp");
+        // Add more image extensions if needed
+    }
+
 public String uploadGeneralAudioToS3(String userid, Resource audioResource) {
-    String keyName = userid+"/"+"audio-files/" + System.currentTimeMillis() + ".mp3"; // Generate unique key
-    return this.uploadToS3(keyName, audioResource,"audio/mpeg");
+    String originalFilename = audioResource.getFilename();
+    String fileExtension = originalFilename != null && originalFilename.lastIndexOf('.') != -1 
+        ? originalFilename.substring(originalFilename.lastIndexOf('.')) 
+        : ".mp3";
+    String keyName = userid+"/"+"audio-files/" + System.currentTimeMillis() + fileExtension;
+    String extension = getFileExtension(fileExtension);
+    String contentType = AUDIO_EXTENSIONS.getOrDefault(extension, "audio/mpeg");
+    return this.uploadToS3(keyName, audioResource, contentType);
 }
 
 public String uploadToS3(String keyName, Resource resource, String contentType) {
@@ -94,9 +130,33 @@ public String uploadToS3(String keyName, Resource resource, String contentType) 
         return null;
     }
 }
-public String uploadYoutubeAudioToS3(String userid, String mp3FileName,Resource audioResource) {
-    String keyName = userid+"/"+"audio-files/" + mp3FileName; // Generate unique key
-    return this.uploadToS3(keyName, audioResource, "audio/mpeg");
+public String uploadYoutubeAudioToS3(String userid, String audioFileName, Resource audioResource) {
+    String keyName = userid+"/"+"audio-files/" + audioFileName; // Generate unique key
+    String extension = getFileExtension(audioFileName);
+    String contentType = AUDIO_EXTENSIONS.getOrDefault(extension, "audio/mpeg");
+    return this.uploadToS3(keyName, audioResource, contentType);
+}
+
+public String uploadYoutubeAudioToS3(String userid, MultipartFile audioFile) {
+    String keyName = userid+"/"+"audio-files/" + audioFile.getOriginalFilename(); // Generate unique key
+    String extension = getFileExtension(audioFile.getOriginalFilename());
+    String contentType = AUDIO_EXTENSIONS.getOrDefault(extension, "audio/mpeg");
+
+    try (InputStream inputStream = audioFile.getInputStream()) {
+        PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(keyName)
+                .contentType(contentType) // Set appropriate content type based on file extension
+                .build();
+
+        this.s3Client.putObject(putObjectRequest, RequestBody.fromInputStream(inputStream, audioFile.getSize()));
+        String audioUrl = generatePresignedUrl(bucketName, keyName);
+        // Generate and return the file URL
+        return audioUrl;
+    } catch (IOException e) {
+        log.error("Error uploading audio file to S3", e);
+        return null;
+    }
 }
 
 public String uploadVideoToS3(String userid, String mp4FileName, Resource video) {
@@ -142,21 +202,42 @@ public String uploadVideoToS3(String userid, String mp4FileName, Resource video)
         return presigner.presignGetObject(presignRequest).url().toString();
     }
 
-    public List<AudioFile> listAudioFiles(String bucketName) {
+    public List<FileLists.File> listAudioFiles(String bucketName) {
+        return this.getAllFiles(bucketName).getAudioFiles();
+//        ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
+//        ListObjectsV2Response response = this.s3Client.listObjectsV2(request);
+//
+//        List<FileLists.File> audioFiles = new ArrayList<>();
+//        for (S3Object s3Object : response.contents()) {
+//            String key = s3Object.key();
+//            String extension = getFileExtension(key);
+//            if (AUDIO_EXTENSIONS.containsKey(extension)) {
+//                String url = this.generatePresignedUrl(bucketName, key);
+//                audioFiles.add(new FileLists.File(key, url));
+//            }
+//        }
+//        return audioFiles;
+    }
 
+    public FileLists getAllFiles(String bucketName) {
         ListObjectsV2Request request = ListObjectsV2Request.builder().bucket(bucketName).build();
         ListObjectsV2Response response = this.s3Client.listObjectsV2(request);
 
-        List<AudioFile> audioFiles = new ArrayList<>();
         for (S3Object s3Object : response.contents()) {
             String key = s3Object.key();
             String extension = getFileExtension(key);
             if (AUDIO_EXTENSIONS.containsKey(extension)) {
                 String url = this.generatePresignedUrl(bucketName, key);
-                audioFiles.add(new AudioFile(key, url));
+                fileLists.addAudioFile(key, url);
+            } else if (VIDEO_EXTENSIONS.containsKey(extension)) {
+                String url = this.generatePresignedUrl(bucketName, key);
+                fileLists.addVideoFile(key, url);
+            } else if (IMAGE_EXTENSIONS.containsKey(extension)) {
+                String url = this.generatePresignedUrl(bucketName, key);
+                fileLists.addImageFile(key, url);
             }
         }
-        return audioFiles;
+        return fileLists;
     }
 
     private String getFileExtension(String fileName) {
@@ -169,29 +250,52 @@ public String uploadVideoToS3(String userid, String mp4FileName, Resource video)
 
     public Resource getAudioFileFromS3(String fileUrl) {
         try {
-            return new UrlResource(fileUrl);
-        } catch (MalformedURLException e) {
+            // Extract the filename from the URL
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+            // If there are query parameters, remove them
+            if (fileName.contains("?")) {
+                fileName = fileName.substring(0, fileName.indexOf('?'));
+            }
+
+            log.info("Downloading audio file: {}", fileName);
+
+            // Download the file content
+            UrlResource urlResource = new UrlResource(fileUrl);
+            byte[] fileContent = urlResource.getInputStream().readAllBytes();
+
+            log.info("Downloaded audio file: {} ({} bytes)", fileName, fileContent.length);
+
+            // Create a ByteArrayResource with the original filename
+            final String finalFileName = fileName;
+            return new ByteArrayResource(fileContent) {
+                @Override
+                public String getFilename() {
+                    return finalFileName;
+                }
+            };
+        } catch (Exception e) {
+            log.error("Error retrieving audio file from S3", e);
             throw new RuntimeException("Error retrieving audio file from S3", e);
         }
     }
 
-    public static class AudioFile {
-        private final String name;
-        private final String url;
-
-        public AudioFile(String name, String url) {
-            this.name = name;
-            this.url = url;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public String getUrl() {
-            return url;
-        }
-    }
+//    public static class AudioFile {
+//        private final String name;
+//        private final String url;
+//
+//        public AudioFile(String name, String url) {
+//            this.name = name;
+//            this.url = url;
+//        }
+//
+//        public String getName() {
+//            return name;
+//        }
+//
+//        public String getUrl() {
+//            return url;
+//        }
+//    }
 
     public void storeTranscriptionInDynamoDB(String videoid_userid,
                                              String tableName,

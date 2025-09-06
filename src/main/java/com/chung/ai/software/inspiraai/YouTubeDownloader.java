@@ -31,7 +31,7 @@ public class YouTubeDownloader {
             ProcessBuilder processBuilder = new ProcessBuilder(
                     "cmd.exe", "/c", "run-yt-dlp.bat", "\"" + videoUrl + "\"", "\""+downloadFileName+"\""
             );
-
+            log.info("ytDlpHome: {}", ytDlpHome);
             processBuilder.directory(new File(ytDlpHome));
             // Log the working directory and command
             log.info("Working directory: " + processBuilder.directory().getAbsolutePath());
@@ -79,6 +79,10 @@ public class YouTubeDownloader {
                 // Capture the downloaded file name from the output
                 if (line.contains(".mp4")) {
                     latestVideoFileName = line.trim();
+                    log.info("latestVideoFileName for mp4: {}", latestVideoFileName);
+                }else if(line.contains(".webm")){
+                    latestVideoFileName = line.trim();
+                    log.info("latestVideoFileName for webm: {}", latestVideoFileName);
                 }
             }
 
@@ -91,12 +95,6 @@ public class YouTubeDownloader {
                 log.info("latestVideoFileName: {}", latestVideoFileName);
                 latestVideoFileName = extractFileName(latestVideoFileName);
                 log.info("Video is already in target format mp4. Extracting the file name from the error message.");
-//                Pattern pattern = Pattern.compile("\"([^\"]+\\.mp4)\"");
-//                Matcher matcher = pattern.matcher(latestVideoFileName);
-//                if (matcher.find()) {
-//                    log.info("matcher.group(1): {}", matcher.group(1));
-//                    return matcher.group(1);
-//                }
             }
             return latestVideoFileName;
         } catch (IOException | InterruptedException e) {

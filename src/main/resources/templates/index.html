@@ -31,6 +31,13 @@
             <button type="submit">Download Audio</button>
         </form>
     <hr>
+        <h2>Download and Transcribe YouTube Audio</h2>
+        <form action="/downloadAndTranscribe" method="post">
+            <label for="ytUrlForTranscribe">YouTube URL:</label>
+            <input type="text" id="ytUrlForTranscribe" name="targetUrl" required>
+            <button type="submit">Download & Transcribe</button>
+        </form>
+    <hr>
     <!-- Form to download the latest video -->
     <form action="/downloadLatestVideo" method="post">
         <label for="channelUrl">Enter YouTube Channel Playlist URL:</label>
