@@ -146,7 +146,7 @@ public class MainController {
         log.info("Generated audio file: {}", fileName);
 
         // Upload the generated audio file to S3
-        Path audioPath = Paths.get(ytDlpHome+"\\"+fileName);
+        Path audioPath = Paths.get(ytDlpHome, fileName);
 
         Resource audioResource = new FileSystemResource(audioPath.toFile());
         String audioFileUrl = awsUtil.uploadYoutubeAudioToS3("1",fileName,audioResource);
@@ -169,7 +169,7 @@ public class MainController {
             log.info("Generated audio file: {}", fileName);
 
             // Upload the generated audio file to S3
-            Path audioPath = Paths.get(ytDlpHome + "\\" + fileName);
+            Path audioPath = Paths.get(ytDlpHome, fileName);
             Resource audioResource = new FileSystemResource(audioPath.toFile());
             String audioFileUrl = awsUtil.uploadYoutubeAudioToS3(userId, fileName, audioResource);
 
